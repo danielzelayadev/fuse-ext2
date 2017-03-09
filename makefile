@@ -1,6 +1,7 @@
 CFLAGS = -g -w -std=c++11  -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
 LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
-OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o obj/init.o
+OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o obj/init.o obj/open.o
+OBJS += obj/read.o obj/readdir.o obj/readlink.o obj/getattr.o
 
 all: bin/ext2
 
