@@ -1,18 +1,24 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-#define PARSE_FAILED -1
-#define BAD_ARGS -2
+#include <fuse.h>
+#include <stddef.h>
 
-struct e2args {
+static struct e2opts {
 	char* device = "";
-	char* mnt = "";
-    int argMin = 3;
+	int showHelp;
+} options;
+
+#define OPTION(t, p)                           \
+    { t, offsetof(struct e2opts, p), 1 }
+
+const static struct fuse_opt option_spec[] = {
+        OPTION("--device=%s", device),
+        OPTION("-h", showHelp),
+        OPTION("--help", showHelp),
+        FUSE_OPT_END
 };
 
-extern e2args args;
-
-int parse(int argc, char** argv);
 void show_help(char *progname);
 
 #endif
