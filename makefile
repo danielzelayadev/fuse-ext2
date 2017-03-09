@@ -1,6 +1,6 @@
 CFLAGS = -g -w -std=c++11  -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
 LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
-OBJS = obj/main.o obj/args.o
+OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o
 
 all: bin/ext2
 
@@ -22,8 +22,11 @@ obj/main.o: obj main.cpp
 obj/args.o: obj args.cpp
 	g++ $(CFLAGS) -c args.cpp -o $@
 
-obj/device.o: obj device.cpp
-	g++ $(CFLAGS) -c device.cpp -o $@
+obj/device.o: obj ./device/device.cpp
+	g++ $(CFLAGS) -c ./device/device.cpp -o $@
+
+obj/ext2.o: obj ./ext2/ext2.cpp
+	g++ $(CFLAGS) -c ./ext2/ext2.cpp -o $@
 
 obj/getattr.o: obj ./ext2/getattr.cpp
 	g++ $(CFLAGS) -c ./ext2/getattr.cpp -o $@
