@@ -1,6 +1,6 @@
-
-CFLAGS = -g -Wall -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
-LINKFLAGS = -Wall `pkg-config fuse --libs`
+CFLAGS = -g -w -std=c++11  -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
+LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
+OBJS = obj/main.o obj/args.o
 
 all: bin/ext2
 
@@ -10,89 +10,92 @@ clean:
 bin: 
 	mkdir -p bin
 
-bin/ext2: bin obj/main.o
+bin/ext2: bin $(OBJS)
 	g++ -g -o bin/ext2 obj/* $(LINKFLAGS)
 
 obj:
 	mkdir -p obj
 
-obj/main.o: obj main.c
-	gcc -g $(CFLAGS) -c main.c -o $@
+obj/main.o: obj main.cpp
+	g++ $(CFLAGS) -c main.cpp -o $@
 
-obj/getattr.o: obj ./ext2/getattr.c
-	g++ -g $(CFLAGS) -c ./ext2/getattr.c -o $@
+obj/args.o: obj args.cpp
+	g++ $(CFLAGS) -c args.cpp -o $@
 
-obj/readlink.o: obj ./ext2/readlink.c
-	g++ -g $(CFLAGS) -c ./ext2/readlink.c -o $@
+obj/getattr.o: obj ./ext2/getattr.cpp
+	g++ $(CFLAGS) -c ./ext2/getattr.cpp -o $@
 
-obj/getdir.o: obj ./ext2/getdir.c
-	g++ -g $(CFLAGS) -c ./ext2/getdir.c -o $@
+obj/readlink.o: obj ./ext2/readlink.cpp
+	g++ $(CFLAGS) -c ./ext2/readlink.cpp -o $@
 
-obj/mknod.o: obj ./ext2/mknod.c
-	g++ -g $(CFLAGS) -c ./ext2/mknod.c -o $@
+obj/getdir.o: obj ./ext2/getdir.cpp
+	g++ $(CFLAGS) -c ./ext2/getdir.cpp -o $@
 
-obj/mkdir.o: obj ./ext2/mkdir.c
-	g++ -g $(CFLAGS) -c ./ext2/mkdir.c -o $@
+obj/mknod.o: obj ./ext2/mknod.cpp
+	g++ $(CFLAGS) -c ./ext2/mknod.cpp -o $@
 
-obj/unlink.o: obj ./ext2/unlink.c
-	g++ -g $(CFLAGS) -c ./ext2/unlink.c -o $@
+obj/mkdir.o: obj ./ext2/mkdir.cpp
+	g++ $(CFLAGS) -c ./ext2/mkdir.cpp -o $@
 
-obj/rmdir.o: obj ./ext2/rmdir.c
-	g++ -g $(CFLAGS) -c ./ext2/rmdir.c -o $@
+obj/unlink.o: obj ./ext2/unlink.cpp
+	g++ $(CFLAGS) -c ./ext2/unlink.cpp -o $@
 
-obj/symlink.o: obj ./ext2/symlink.c
-	g++ -g $(CFLAGS) -c ./ext2/symlink.c -o $@
+obj/rmdir.o: obj ./ext2/rmdir.cpp
+	g++ $(CFLAGS) -c ./ext2/rmdir.cpp -o $@
 
-obj/rename.o: obj ./ext2/rename.c
-	g++ -g $(CFLAGS) -c ./ext2/rename.c -o $@
+obj/symlink.o: obj ./ext2/symlink.cpp
+	g++ $(CFLAGS) -c ./ext2/symlink.cpp -o $@
 
-obj/link.o: obj ./ext2/link.c
-	g++ -g $(CFLAGS) -c ./ext2/link.c -o $@
+obj/rename.o: obj ./ext2/rename.cpp
+	g++ $(CFLAGS) -c ./ext2/rename.cpp -o $@
 
-obj/chmod.o: obj ./ext2/chmod.c
-	g++ -g $(CFLAGS) -c ./ext2/chmod.c -o $@
+obj/link.o: obj ./ext2/link.cpp
+	g++ $(CFLAGS) -c ./ext2/link.cpp -o $@
 
-obj/chown.o: obj ./ext2/chown.c
-	g++ -g $(CFLAGS) -c ./ext2/chown.c -o $@
+obj/chmod.o: obj ./ext2/chmod.cpp
+	g++ $(CFLAGS) -c ./ext2/chmod.cpp -o $@
 
-obj/truncate.o: obj ./ext2/truncate.c
-	g++ -g $(CFLAGS) -c ./ext2/truncate.c -o $@
+obj/chown.o: obj ./ext2/chown.cpp
+	g++ $(CFLAGS) -c ./ext2/chown.cpp -o $@
 
-obj/utime.o: obj ./ext2/utime.c
-	g++ -g $(CFLAGS) -c ./ext2/utime.c -o $@
+obj/truncate.o: obj ./ext2/truncate.cpp
+	g++ $(CFLAGS) -c ./ext2/truncate.cpp -o $@
 
-obj/open.o: obj ./ext2/open.c
-	g++ -g $(CFLAGS) -c ./ext2/open.c -o $@
+obj/utime.o: obj ./ext2/utime.cpp
+	g++ $(CFLAGS) -c ./ext2/utime.cpp -o $@
 
-obj/read.o: obj ./ext2/read.c
-	g++ -g $(CFLAGS) -c ./ext2/read.c -o $@
+obj/open.o: obj ./ext2/open.cpp
+	g++ $(CFLAGS) -c ./ext2/open.cpp -o $@
 
-obj/write.o: obj ./ext2/write.c
-	g++ -g $(CFLAGS) -c ./ext2/write.c -o $@
+obj/read.o: obj ./ext2/read.cpp
+	g++ $(CFLAGS) -c ./ext2/read.cpp -o $@
 
-obj/statfs.o: obj ./ext2/statfs.c
-	g++ -g $(CFLAGS) -c ./ext2/statfs.c -o $@
+obj/write.o: obj ./ext2/write.cpp
+	g++ $(CFLAGS) -c ./ext2/write.cpp -o $@
 
-obj/flush.o: obj ./ext2/flush.c
-	g++ -g $(CFLAGS) -c ./ext2/flush.c -o $@
+obj/statfs.o: obj ./ext2/statfs.cpp
+	g++ $(CFLAGS) -c ./ext2/statfs.cpp -o $@
 
-obj/release.o: obj ./ext2/release.c
-	g++ -g $(CFLAGS) -c ./ext2/release.c -o $@
+obj/flush.o: obj ./ext2/flush.cpp
+	g++ $(CFLAGS) -c ./ext2/flush.cpp -o $@
 
-obj/fsync.o: obj ./ext2/fsync.c
-	g++ -g $(CFLAGS) -c ./ext2/fsync.c -o $@
+obj/release.o: obj ./ext2/release.cpp
+	g++ $(CFLAGS) -c ./ext2/release.cpp -o $@
 
-obj/opendir.o: obj ./ext2/opendir.c
-	g++ -g $(CFLAGS) -c ./ext2/opendir.c -o $@
+obj/fsync.o: obj ./ext2/fsync.cpp
+	g++ $(CFLAGS) -c ./ext2/fsync.cpp -o $@
 
-obj/readdir.o: obj ./ext2/readdir.c
-	g++ -g $(CFLAGS) -c ./ext2/readdir.c -o $@
+obj/opendir.o: obj ./ext2/opendir.cpp
+	g++ $(CFLAGS) -c ./ext2/opendir.cpp -o $@
 
-obj/releasedir.o: obj ./ext2/releasedir.c
-	g++ -g $(CFLAGS) -c ./ext2/releasedir.c -o $@
+obj/readdir.o: obj ./ext2/readdir.cpp
+	g++ $(CFLAGS) -c ./ext2/readdir.cpp -o $@
 
-obj/fsyncdir.o: obj ./ext2/fsyncdir.c
-	g++ -g $(CFLAGS) -c ./ext2/fsyncdir.c -o $@
+obj/releasedir.o: obj ./ext2/releasedir.cpp
+	g++ $(CFLAGS) -c ./ext2/releasedir.cpp -o $@
 
-obj/init.o: obj ./ext2/init.c
-	g++ -g $(CFLAGS) -c ./ext2/init.c -o $@
+obj/fsyncdir.o: obj ./ext2/fsyncdir.cpp
+	g++ $(CFLAGS) -c ./ext2/fsyncdir.cpp -o $@
+
+obj/init.o: obj ./ext2/init.cpp
+	g++ $(CFLAGS) -c ./ext2/init.cpp -o $@
