@@ -1,7 +1,7 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
-extern int blockSize = 1024;
+extern int blockSize;
 
 int openDevice(const char* path);
 int readBlock(int blockNo, char* buffer);

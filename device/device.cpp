@@ -4,11 +4,12 @@
 
 static const char *path;
 static FILE *f;
+int blockSize = 1024;
 
 int openDevice(const char* path) {
     path = path;
     f = fopen(path, "r+");
-    return f;
+    return f != 0;
 }
 
 int readBlock(int blockNo, char* buffer) {
