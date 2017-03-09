@@ -5,9 +5,9 @@
 e2args args;
 
 int skipFlags(int* i, int argc, char** argv) {
-    while (argv[*i][0] == '-')
-        if ((*i)++ == argc) return 0;
-    return 1;
+    for (; *i < argc && argv[*i][0] == '-'; (*i)++) 
+        if (*i == (argc - 1)) return 0;
+    return *i < argc;
 }
 
 int parse(int argc, char** argv) {
@@ -15,15 +15,18 @@ int parse(int argc, char** argv) {
         return BAD_ARGS;
     
     int i = 1;
-
-    if (!skipFlags(&i, argc, argv))
+    int lel = skipFlags(&i, argc, argv);
+    printf("%d\n", lel);
+    if (!lel)
         return BAD_ARGS;
-
+    printf("%d\n", lel);
     args.device = strdup(argv[i++]);
 
-    if (!skipFlags(&i, argc, argv))
+    lel = skipFlags(&i, argc, argv);
+    printf("%d\n", lel);
+    if (!lel)
         return BAD_ARGS;
-
+    printf("%d\n", lel);
     args.mnt = strdup(argv[i]);
 
     return 0;
