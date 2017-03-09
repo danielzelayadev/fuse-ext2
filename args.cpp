@@ -15,18 +15,15 @@ int parse(int argc, char** argv) {
         return BAD_ARGS;
     
     int i = 1;
-    int lel = skipFlags(&i, argc, argv);
-    printf("%d\n", lel);
-    if (!lel)
-        return BAD_ARGS;
-    printf("%d\n", lel);
-    args.device = strdup(argv[i++]);
 
-    lel = skipFlags(&i, argc, argv);
-    printf("%d\n", lel);
-    if (!lel)
+    if (!skipFlags(&i, argc, argv))
         return BAD_ARGS;
-    printf("%d\n", lel);
+
+    args.device = strdup(argv[i++]);
+    
+    if (!skipFlags(&i, argc, argv))
+        return BAD_ARGS;
+        
     args.mnt = strdup(argv[i]);
 
     return 0;
