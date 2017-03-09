@@ -22,6 +22,9 @@ obj/main.o: obj main.cpp
 obj/args.o: obj args.cpp
 	g++ $(CFLAGS) -c args.cpp -o $@
 
+obj/device.o: obj device.cpp
+	g++ $(CFLAGS) -c device.cpp -o $@
+
 obj/getattr.o: obj ./ext2/getattr.cpp
 	g++ $(CFLAGS) -c ./ext2/getattr.cpp -o $@
 
