@@ -1,17 +1,12 @@
 #include "ext2.h"
 #include "types.h"
-#include "../device/device.h"
-
-#include <stdio.h>
-#include <string.h>
+#include "super.h"
 
 bool verifyMagic() {
-    char* buffer = new char[blockSize];
-    readBlock(1, buffer);
-
     Ext2SuperBlock sb;
-
-    mempcpy(&sb, buffer, sizeof(Ext2SuperBlock));
+    
+    if (!readSuperBlock(&sb))
+        return false;
 
     return sb.s_magic == MAGIC;
 }
