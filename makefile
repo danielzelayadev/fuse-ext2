@@ -1,7 +1,8 @@
 CFLAGS = -g -w -std=c++11  -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
 LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
 OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o obj/init.o obj/open.o
-OBJS += obj/read.o obj/readdir.o obj/readlink.o obj/getattr.o
+OBJS += obj/read.o obj/readdir.o obj/readlink.o obj/getattr.o obj/inode.o
+OBJS += obj/super.o obj/groupdesc.o obj/blockgroup.o
 
 all: bin/ext2
 
@@ -28,6 +29,18 @@ obj/device.o: obj ./device/device.cpp
 
 obj/ext2.o: obj ./ext2/ext2.cpp
 	g++ $(CFLAGS) -c ./ext2/ext2.cpp -o $@
+
+obj/super.o: obj ./ext2/super.cpp
+	g++ $(CFLAGS) -c ./ext2/super.cpp -o $@
+
+obj/inode.o: obj ./ext2/inode.cpp
+	g++ $(CFLAGS) -c ./ext2/inode.cpp -o $@
+
+obj/groupdesc.o: obj ./ext2/groupdesc.cpp
+	g++ $(CFLAGS) -c ./ext2/groupdesc.cpp -o $@
+
+obj/blockgroup.o: obj ./ext2/blockgroup.cpp
+	g++ $(CFLAGS) -c ./ext2/blockgroup.cpp -o $@
 
 obj/getattr.o: obj ./ext2/getattr.cpp
 	g++ $(CFLAGS) -c ./ext2/getattr.cpp -o $@
