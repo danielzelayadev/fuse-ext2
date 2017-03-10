@@ -1,10 +1,11 @@
 #include "device.h"
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 static const char *path;
 static FILE *f;
-int blockSize = 1024;
+unsigned int blockSize = 1024;
 
 int openDevice(const char* path) {
     path = path;
@@ -15,6 +16,19 @@ int openDevice(const char* path) {
 int readBlock(int blockNo, char* buffer) {
     fseek(f, blockNo*blockSize, SEEK_SET);
     return (fread(buffer, 1, blockSize, f) == blockSize);
+}
+
+int read(int pos, void* buffer, int size) {
+    char b[size];
+    fseek(f, pos, SEEK_SET);
+    int res = fread(b, 1, size, f);
+
+    if (res != size) 
+        return 0;
+
+    memcpy(buffer, b, size);
+
+    return 1;
 }
 
 int writeBlock(int blockNo, char* buffer) {
