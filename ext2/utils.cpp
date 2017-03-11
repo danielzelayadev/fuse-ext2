@@ -15,3 +15,7 @@ void split(const string& s, char c, vector<string>& v) {
          v.push_back(s.substr(i, s.length()));
    }
 }
+
+bool indexOutOfBounds(int index, int size) {
+      return index < 0 || index >= size;
+}
