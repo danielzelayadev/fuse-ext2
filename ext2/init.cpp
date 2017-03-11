@@ -20,4 +20,5 @@ void* init(struct fuse_conn_info *conn) {
     descriptorListSize = groupCount * GD_SIZE;
     inodesPerBlock = blockSize / INODE_SIZE;
     itableBlockCount = sb.s_inodes_per_group / inodesPerBlock;
+    BLOCK_POINTERS_IN_BLOCK = blockSize/sizeof(uint32_t) + EXT2_NDIR_BLOCKS;
 }
