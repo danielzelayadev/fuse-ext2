@@ -123,7 +123,7 @@ struct Ext2GroupDescriptor {
 
 #define EXT2_NAME_LEN 255
 
-struct Ext2DirEntry {
+struct Ext2Dentry {
 	uint32_t	inode;			/* Inode number */
 	uint16_t	rec_len;		/* Directory entry length */
 	uint16_t	name_len;		/* Name length */
