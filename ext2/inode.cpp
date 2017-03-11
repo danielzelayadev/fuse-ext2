@@ -32,11 +32,19 @@ int getInodeByPath(string path, Ext2Inode* inode) {
         int currDirInodeNo = ROOT_DIR_INODE;
 
         for (int i = 0; i < filenames.size(); i++) {
+            Ext2Inode dirInode;
             Ext2Dentry dentry;
 
-            printf("Looking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
+            printf("\nLooking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
 
-            if (!readDentry(currDirInodeNo, filenames[i], &dentry)) {
+            if (!readInode(currDirInodeNo, &dirInode)) {
+                printf("ReadInode Failed...\n");
+                return 0;
+            }
+
+            printInode(dirInode);
+
+            if (!readDentry(dirInode, filenames[i], &dentry)) {
                 printf("Search for File '%s' in directory '%s' failed.\n", 
                     filenames[i].c_str(), currDir.c_str());
                 return 0;
@@ -63,31 +71,43 @@ int readInode(int inodeNo, Ext2Inode* inode) {
     if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
         return 0;
 
-    int inodeIndexInGroup = getInodeIndexInGroup(inodeNo);
-
-    if (inodeIndexInGroup < 0)
-        return 0;
-
-    int blockIndexInGroup = getIndexOfInodeBlockInGroup(inodeIndexInGroup);
-
-    if (blockIndexInGroup < 0)
-        return 0;
-
-    int pos = calcInodePositionInDevice(gd, blockIndexInGroup, inodeIndexInGroup);
+    int pos = calcInodePositionInDevice(gd, inodeNo);
 
     sb = 0;
 
     return read(pos, (void*)inode, INODE_SIZE);
 }
 
+int readInodeBlock(Ext2Inode inode, int block, char* buff) {
+    if (indexOutOfBounds(block, inode.i_blocks))
+        return 0;
+    
+    if (block < EXT2_NDIR_BLOCKS)
+        readBlock(inode.i_block[block], buff);
+        
+    return 1;
+}
+
+// int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
+//     return 1;
+// }
+
+// int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
+//     return 1;
+// }
+
+// int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
+//     return 1;
+// }
+
 int getBlockGroupOfInode(int inodeNo) {
     if (!loadSb()) return -1;
-    return inodeNo / sb->s_inodes_per_group;
+    return (inodeNo - 1) / sb->s_inodes_per_group;
 }
 
 int getInodeIndexInGroup(int inodeNo) {
     if (!loadSb()) return -1;
-    return inodeNo % sb->s_inodes_per_group;
+    return (inodeNo - 1) % sb->s_inodes_per_group;
 }
 
 int getIndexOfInodeBlockInGroup(int indexInGroup) {
@@ -99,13 +119,8 @@ int getIndexOfInodeInBlock(int indexInGroup) {
     return indexInGroup % inodesPerBlock;
 }
 
-int calcInodePositionInDevice(Ext2GroupDescriptor gd, int blockIndexInGroup, int inodeIndexInBlock) {
-    int blockInDevice = calcInodeBlockInDevice(gd, blockIndexInGroup);
-    return (blockInDevice * blockSize) + (inodeIndexInBlock * INODE_SIZE);
-}
-
-int calcInodeBlockInDevice(Ext2GroupDescriptor gd, int blockIndexInGroup) {
-    return gd.bg_inode_table + blockIndexInGroup;
+int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeNo) {
+    return (gd.bg_inode_table * blockSize) + ((inodeNo - 1)*INODE_SIZE);
 }
 
 void printInode(Ext2Inode inode) {
