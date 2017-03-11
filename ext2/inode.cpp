@@ -10,7 +10,8 @@
 #include <stdio.h>
 
 Ext2SuperBlock* sb = 0;
-unsigned int inodesPerBlock, itableBlockCount;
+unsigned int inodesPerBlock, itableBlockCount, 
+             BLOCK_POINTERS_IN_BLOCK;
 
 int loadSb() {
     if (!sb) {
@@ -82,23 +83,29 @@ int readInodeBlock(Ext2Inode inode, int block, char* buff) {
     if (indexOutOfBounds(block, inode.i_blocks))
         return 0;
     
-    if (block < EXT2_NDIR_BLOCKS)
-        readBlock(inode.i_block[block], buff);
+    if (block < EXT2_NDIR_BLOCKS && inode.i_block[block])
+        return readBlock(inode.i_block[block], buff);
+    if (IS_SI)
+        return readInodeSIBlock(inode, block, buff);
+    if (IS_DI)
+        return readInodeDIBlock(inode, block, buff);
+    if (IS_TI)
+        return readInodeDIBlock(inode, block, buff);
         
-    return 1;
+    return 0;
 }
 
-// int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
-//     return 1;
-// }
+int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
+    return 0;
+}
 
-// int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
-//     return 1;
-// }
+int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
+    return 0;
+}
 
-// int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
-//     return 1;
-// }
+int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
+    return 0;
+}
 
 int getBlockGroupOfInode(int inodeNo) {
     if (!loadSb()) return -1;
