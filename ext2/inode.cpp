@@ -96,7 +96,20 @@ int readInodeBlock(Ext2Inode inode, int block, char* buff) {
 }
 
 int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
-    return 0;
+    if (!IS_SI) return 0;
+
+    char siBlock[blockSize];
+    
+    if (!readBlock(inode.i_block[EXT2_IND_BLOCK], siBlock)) {
+        printf("Failed to read SI block\n");
+        return 0;
+    }
+
+    unsigned int blockNo;
+
+    memcpy(&blockNo, &siBlock[block - EXT2_NDIR_BLOCKS], sizeof(unsigned int));
+
+    return blockNo ? readBlock(blockNo, buff) : 0;
 }
 
 int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
