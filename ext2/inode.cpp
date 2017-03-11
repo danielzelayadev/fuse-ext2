@@ -2,7 +2,11 @@
 #include "super.h"
 #include "groupdesc.h"
 #include "blockgroup.h"
+#include "dentry.h"
 #include "../device/device.h"
+#include "utils.h"
+#include <vector>
+#include <string.h>
 #include <stdio.h>
 
 Ext2SuperBlock* sb = 0;
@@ -18,6 +22,34 @@ int loadSb() {
 }
 
 int getInodeByPath(string path, Ext2Inode* inode) {
+    if (path == "/")
+        readInode(ROOT_DIR_INODE, inode);
+    else {
+        vector<string> filenames;
+        split(path, '/', filenames);
+
+        string currDir = "/";
+        int currDirInodeNo = ROOT_DIR_INODE;
+
+        for (int i = 0; i < filenames.size(); i++) {
+            Ext2Dentry dentry;
+
+            printf("Looking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
+
+            if (!readDentry(currDirInodeNo, filenames[i], &dentry)) {
+                printf("Search for File '%s' in directory '%s' failed.\n", 
+                    filenames[i].c_str(), currDir.c_str());
+                return 0;
+            }
+
+            printDentry(dentry);
+            currDirInodeNo = dentry.inode;
+            currDir = filenames[i];
+        }
+
+        return readInode(currDirInodeNo, inode);
+    }
+    
     return 1;
 }
 
