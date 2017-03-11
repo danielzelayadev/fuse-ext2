@@ -22,6 +22,24 @@ int loadSb() {
     return 1;
 }
 
+void breakDownBlockNo(int block, int* ti, int* di, int* si, int* blk) {
+    if (IS_SI) {
+        *ti = *di = 0;
+        *blk = block - EXT2_NDIR_BLOCKS;
+    } else if (IS_DI) {
+        *ti = 0;
+        *si = (block - SI_UL) / SI_BLOCKS;
+        *blk = (block - SI_UL) % SI_BLOCKS;
+    } else if (IS_TI) {
+        *di = (block - DI_UL) / DI_BLOCKS;
+        *si = (block - DI_UL) / SI_BLOCKS;
+        *blk = (block - DI_UL) % SI_BLOCKS;
+    } else {
+        *ti = *di = *si = 0;
+        *blk = block;
+    }
+}
+
 int getInodeByPath(string path, Ext2Inode* inode) {
     if (path == "/")
         readInode(ROOT_DIR_INODE, inode);
@@ -96,28 +114,78 @@ int readInodeBlock(Ext2Inode inode, int block, char* buff) {
 }
 
 int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
-    if (!IS_SI) return 0;
+    return IS_SI ? readSIBlock(inode.i_block[EXT2_IND_BLOCK], block - EXT2_NDIR_BLOCKS, buff) : 0;
+}
+
+int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
+    if (!IS_DI) return 0;
+
+    int ti, di, si, b;
+
+    breakDownBlockNo(block, &ti, &di, &si, &b);
+
+    return readDIBlock(inode.i_block[EXT2_DIND_BLOCK], si, b, buff);
+}
+
+int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
+    if (!IS_TI) return 0;
+
+    int ti, di, si, b;
+
+    breakDownBlockNo(block, &ti, &di, &si, &b);
+
+    return readTIBlock(inode.i_block[EXT2_TIND_BLOCK], di, si, b, buff);
+}
+
+int readSIBlock(int siBlockNo, int block, char* buff) {
+    if (!siBlockNo) return 0;
 
     char siBlock[blockSize];
     
-    if (!readBlock(inode.i_block[EXT2_IND_BLOCK], siBlock)) {
+    if (!readBlock(siBlockNo, siBlock)) {
         printf("Failed to read SI block\n");
         return 0;
     }
 
     unsigned int blockNo;
 
-    memcpy(&blockNo, &siBlock[block - EXT2_NDIR_BLOCKS], sizeof(unsigned int));
+    memcpy(&blockNo, &siBlock[block], sizeof(unsigned int));
 
     return blockNo ? readBlock(blockNo, buff) : 0;
 }
 
-int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
-    return 0;
+int readDIBlock(int diBlockNo, int siPointer, int block, char* buff) {
+    if (!diBlockNo) return 0;
+
+    char diBlock[blockSize];
+    
+    if (!readBlock(diBlockNo, diBlock)) {
+        printf("Failed to read DI block\n");
+        return 0;
+    }
+
+    unsigned int siBlockNo;
+
+    memcpy(&siBlockNo, &diBlock[siPointer], sizeof(unsigned int));
+
+    return readSIBlock(siBlockNo, block, buff);
 }
 
-int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
-    return 0;
+int readTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* buff) {
+    if (!tiBlockNo) return 0;
+
+    char tiBlock[blockSize];
+    
+    if (!readBlock(tiBlockNo, tiBlock)) {
+        printf("Failed to read TI block\n");
+        return 0;
+    }
+
+    unsigned int diBlockNo;
+
+    memcpy(&diBlockNo, &tiBlock[diPointer], sizeof(unsigned int));
+
+    return readDIBlock(diBlockNo, siPointer, block, buff);
 }
 
 int getBlockGroupOfInode(int inodeNo) {
