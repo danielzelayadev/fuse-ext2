@@ -2,7 +2,7 @@ CFLAGS = -g -w -std=c++11  -DFUSE_USE_VERSION=26 `pkg-config fuse --cflags`
 LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
 OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o obj/init.o obj/open.o
 OBJS += obj/read.o obj/readdir.o obj/readlink.o obj/getattr.o obj/inode.o
-OBJS += obj/super.o obj/groupdesc.o obj/blockgroup.o obj/utils.o
+OBJS += obj/super.o obj/groupdesc.o obj/blockgroup.o obj/utils.o obj/dentry.o
 
 all: bin/ext2
 
@@ -41,6 +41,9 @@ obj/groupdesc.o: obj ./ext2/groupdesc.cpp
 
 obj/blockgroup.o: obj ./ext2/blockgroup.cpp
 	g++ $(CFLAGS) -c ./ext2/blockgroup.cpp -o $@
+
+obj/dentry.o: obj ./ext2/dentry.cpp
+	g++ $(CFLAGS) -c ./ext2/dentry.cpp -o $@
 
 obj/utils.o: obj ./ext2/utils.cpp
 	g++ $(CFLAGS) -c ./ext2/utils.cpp -o $@
