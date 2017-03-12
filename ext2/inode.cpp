@@ -8,6 +8,7 @@
 #include <vector>
 #include <string.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 Ext2SuperBlock* sb = 0;
 unsigned int inodesPerBlock, itableBlockCount, 
@@ -193,6 +194,24 @@ int readInodeBlock(Ext2Inode inode, int block, char* buff) {
         return readTIBlock(ti, di, si, b, buff);
         
     return 0;
+}
+
+void fillInodeStatBuff(int inodeNo, struct stat* statbuf) {
+    Ext2Inode inode;
+    if (readInode(inodeNo, &inode))
+        fillInodeStatBuff(inode, statbuf);
+}
+
+void fillInodeStatBuff(Ext2Inode inode, struct stat* statbuf) {
+    statbuf->st_mode   = inode.i_mode;
+    statbuf->st_nlink  = inode.i_links_count;
+    statbuf->st_size   = inode.i_size;
+    statbuf->st_blocks = inode.i_blocks;
+    statbuf->st_uid    = inode.i_uid;
+    statbuf->st_gid    = inode.i_gid;
+    statbuf->st_atime  = inode.i_atime;
+    statbuf->st_mtime  = inode.i_mtime;
+    statbuf->st_ctime  = inode.i_ctime;
 }
 
 void printInode(Ext2Inode inode) {

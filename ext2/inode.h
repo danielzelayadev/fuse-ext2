@@ -25,6 +25,8 @@ extern unsigned int inodesPerBlock, itableBlockCount,
 int getInodeByPath(string path, Ext2Inode* inode);
 int readInode(int inodeNo, Ext2Inode* inode);
 int readInodeBlock(Ext2Inode inode, int block, char* buff);
+void fillInodeStatBuff(Ext2Inode inode, struct stat* statbuf);
+void fillInodeStatBuff(int inodeNo, struct stat* statbuf);
 void printInode(Ext2Inode inode);
 
 #endif
