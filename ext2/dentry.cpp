@@ -1,8 +1,31 @@
 #include "dentry.h"
 #include "inode.h"
+#include "utils.h"
 #include "../device/device.h"
 #include <string.h>
 #include <iostream>
+#include <vector>
+
+int readDentry(string path, Ext2Dentry* dentry) {
+    vector<string> filenames;
+    string currDir = "/";
+    int currDirInodeNo = ROOT_DIR_INODE;
+
+    split(path, '/', filenames);
+
+    for (int i = 0; i < filenames.size(); i++) {
+        Ext2Inode dirInode;
+
+        if (!readInode(currDirInodeNo, &dirInode) || 
+            !readDentry(dirInode, filenames[i], dentry)) 
+            return 0;
+
+        currDirInodeNo = dentry->inode;
+        currDir = filenames[i];
+    }
+
+    return 1;
+}
 
 int readDentry(Ext2Inode dirInode, string filename, Ext2Dentry* dentry) {
     int offset = 0;
