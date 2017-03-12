@@ -102,17 +102,8 @@ int getInodeIndexInGroup(int inodeNo) {
     return (inodeNo - 1) % sb->s_inodes_per_group;
 }
 
-int getIndexOfInodeBlockInGroup(int indexInGroup) {
-    int blockNo = indexInGroup / inodesPerBlock;
-    return blockNo <  itableBlockCount ? blockNo : -1;
-}
-
-int getIndexOfInodeInBlock(int indexInGroup) {
-    return indexInGroup % inodesPerBlock;
-}
-
-int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeNo) {
-    return (gd.bg_inode_table * blockSize) + ((inodeNo - 1)*INODE_SIZE);
+int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeIndexInGroup) {
+    return (gd.bg_inode_table * blockSize) + (inodeIndexInGroup * INODE_SIZE);
 }
 
 int getInodeByPath(string path, Ext2Inode* inode) {
@@ -129,14 +120,15 @@ int getInodeByPath(string path, Ext2Inode* inode) {
             Ext2Inode dirInode;
             Ext2Dentry dentry;
 
-            printf("\nLooking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
+            printf("\nFor Path %s, looking for File '%s' in Directory '%s'\n", 
+                path.c_str(), filenames[i].c_str(), currDir.c_str());
 
             if (!readInode(currDirInodeNo, &dirInode)) {
                 printf("ReadInode Failed...\n");
                 return 0;
             }
 
-            printInode(dirInode);
+            // printInode(dirInode);
 
             if (!readDentry(dirInode, filenames[i], &dentry)) {
                 printf("Search for File '%s' in directory '%s' failed.\n", 
@@ -144,7 +136,7 @@ int getInodeByPath(string path, Ext2Inode* inode) {
                 return 0;
             }
 
-            printDentry(dentry);
+            // printDentry(dentry);
             currDirInodeNo = dentry.inode;
             currDir = filenames[i];
         }
@@ -165,7 +157,9 @@ int readInode(int inodeNo, Ext2Inode* inode) {
     if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
         return 0;
 
-    int pos = calcInodePositionInDevice(gd, inodeNo);
+    int indxInGroup = getInodeIndexInGroup(inodeNo);
+
+    int pos = calcInodePositionInDevice(gd, indxInGroup);
 
     sb = 0;
 
