@@ -24,19 +24,7 @@ extern unsigned int inodesPerBlock, itableBlockCount,
 
 int getInodeByPath(string path, Ext2Inode* inode);
 int readInode(int inodeNo, Ext2Inode* inode);
-int getBlockGroupOfInode(int inodeNo);
-int getInodeIndexInGroup(int inodeNo);
-int getIndexOfInodeBlockInGroup(int indexInGroup);
-int getIndexOfInodeInBlock(int indexInGroup);
-int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeNo);
 int readInodeBlock(Ext2Inode inode, int block, char* buff);
-int readInodeSIBlock(Ext2Inode inode, int block, char* buff);
-int readInodeDIBlock(Ext2Inode inode, int block, char* buff);
-int readInodeTIBlock(Ext2Inode inode, int block, char* buff);
-int readSIBlock(int siBlockNo, int block, char* buff);
-int readDIBlock(int diBlockNo, int siPointer, int block, char* buff);
-int readTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* buff);
 void printInode(Ext2Inode inode);
-void breakDownBlockNo(int block, int* ti, int* di, int* si, int* blk);
 
 #endif

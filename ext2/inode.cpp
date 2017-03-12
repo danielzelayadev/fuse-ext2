@@ -40,103 +40,6 @@ void breakDownBlockNo(int block, int* ti, int* di, int* si, int* blk) {
     }
 }
 
-int getInodeByPath(string path, Ext2Inode* inode) {
-    if (path == "/")
-        readInode(ROOT_DIR_INODE, inode);
-    else {
-        vector<string> filenames;
-        split(path, '/', filenames);
-
-        string currDir = "/";
-        int currDirInodeNo = ROOT_DIR_INODE;
-
-        for (int i = 0; i < filenames.size(); i++) {
-            Ext2Inode dirInode;
-            Ext2Dentry dentry;
-
-            printf("\nLooking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
-
-            if (!readInode(currDirInodeNo, &dirInode)) {
-                printf("ReadInode Failed...\n");
-                return 0;
-            }
-
-            printInode(dirInode);
-
-            if (!readDentry(dirInode, filenames[i], &dentry)) {
-                printf("Search for File '%s' in directory '%s' failed.\n", 
-                    filenames[i].c_str(), currDir.c_str());
-                return 0;
-            }
-
-            printDentry(dentry);
-            currDirInodeNo = dentry.inode;
-            currDir = filenames[i];
-        }
-
-        return readInode(currDirInodeNo, inode);
-    }
-    
-    return 1;
-}
-
-int readInode(int inodeNo, Ext2Inode* inode) {
-    if (!loadSb()) return 0;
-
-    Ext2GroupDescriptor gd;
-
-    int blockGroup = getBlockGroupOfInode(inodeNo);
-
-    if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
-        return 0;
-
-    int pos = calcInodePositionInDevice(gd, inodeNo);
-
-    sb = 0;
-
-    return read(pos, (void*)inode, INODE_SIZE);
-}
-
-int readInodeBlock(Ext2Inode inode, int block, char* buff) {
-    if (indexOutOfBounds(block, inode.i_blocks))
-        return 0;
-    
-    if (block < EXT2_NDIR_BLOCKS && inode.i_block[block])
-        return readBlock(inode.i_block[block], buff);
-    if (IS_SI)
-        return readInodeSIBlock(inode, block, buff);
-    if (IS_DI)
-        return readInodeDIBlock(inode, block, buff);
-    if (IS_TI)
-        return readInodeDIBlock(inode, block, buff);
-        
-    return 0;
-}
-
-int readInodeSIBlock(Ext2Inode inode, int block, char* buff) {
-    return IS_SI ? readSIBlock(inode.i_block[EXT2_IND_BLOCK], block - EXT2_NDIR_BLOCKS, buff) : 0;
-}
-
-int readInodeDIBlock(Ext2Inode inode, int block, char* buff) {
-    if (!IS_DI) return 0;
-
-    int ti, di, si, b;
-
-    breakDownBlockNo(block, &ti, &di, &si, &b);
-
-    return readDIBlock(inode.i_block[EXT2_DIND_BLOCK], si, b, buff);
-}
-
-int readInodeTIBlock(Ext2Inode inode, int block, char* buff) {
-    if (!IS_TI) return 0;
-
-    int ti, di, si, b;
-
-    breakDownBlockNo(block, &ti, &di, &si, &b);
-
-    return readTIBlock(inode.i_block[EXT2_TIND_BLOCK], di, si, b, buff);
-}
-
 int readSIBlock(int siBlockNo, int block, char* buff) {
     if (!siBlockNo) return 0;
 
@@ -209,6 +112,87 @@ int getIndexOfInodeInBlock(int indexInGroup) {
 
 int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeNo) {
     return (gd.bg_inode_table * blockSize) + ((inodeNo - 1)*INODE_SIZE);
+}
+
+int getInodeByPath(string path, Ext2Inode* inode) {
+    if (path == "/")
+        readInode(ROOT_DIR_INODE, inode);
+    else {
+        vector<string> filenames;
+        split(path, '/', filenames);
+
+        string currDir = "/";
+        int currDirInodeNo = ROOT_DIR_INODE;
+
+        for (int i = 0; i < filenames.size(); i++) {
+            Ext2Inode dirInode;
+            Ext2Dentry dentry;
+
+            printf("\nLooking for File '%s' in Directory '%s'\n", filenames[i].c_str(), currDir.c_str());
+
+            if (!readInode(currDirInodeNo, &dirInode)) {
+                printf("ReadInode Failed...\n");
+                return 0;
+            }
+
+            printInode(dirInode);
+
+            if (!readDentry(dirInode, filenames[i], &dentry)) {
+                printf("Search for File '%s' in directory '%s' failed.\n", 
+                    filenames[i].c_str(), currDir.c_str());
+                return 0;
+            }
+
+            printDentry(dentry);
+            currDirInodeNo = dentry.inode;
+            currDir = filenames[i];
+        }
+
+        return readInode(currDirInodeNo, inode);
+    }
+    
+    return 1;
+}
+
+int readInode(int inodeNo, Ext2Inode* inode) {
+    if (!loadSb()) return 0;
+
+    Ext2GroupDescriptor gd;
+
+    int blockGroup = getBlockGroupOfInode(inodeNo);
+
+    if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
+        return 0;
+
+    int pos = calcInodePositionInDevice(gd, inodeNo);
+
+    sb = 0;
+
+    return read(pos, (void*)inode, INODE_SIZE);
+}
+
+int readInodeBlock(Ext2Inode inode, int block, char* buff) {
+    if (indexOutOfBounds(block, inode.i_blocks))
+        return 0;
+
+    if (block < EXT2_NDIR_BLOCKS && inode.i_block[block])
+        return readBlock(inode.i_block[block], buff);
+
+    int ti = inode.i_block[EXT2_TIND_BLOCK], 
+        di = inode.i_block[EXT2_DIND_BLOCK], 
+        si = inode.i_block[EXT2_IND_BLOCK], 
+        b  = block;
+
+    breakDownBlockNo(block, &ti, &di, &si, &b);
+
+    if (IS_SI)
+        return readSIBlock(si, b, buff);
+    if (IS_DI)
+        return readDIBlock(di, si, b, buff);
+    if (IS_TI)
+        return readTIBlock(ti, di, si, b, buff);
+        
+    return 0;
 }
 
 void printInode(Ext2Inode inode) {
