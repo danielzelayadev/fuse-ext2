@@ -109,9 +109,14 @@ int getInodeByPath(string path, Ext2Inode* inode) {
     if (path == "/")
         return readInode(ROOT_DIR_INODE, inode);
     
-    Ext2Dentry dentry;       
-     
-    return readDentry(path, &dentry) && readInode(dentry.inode, inode);
+    int inodeIndx = getInodeIndexByPath(path);    
+
+    return inodeIndx && readInode(inodeIndx, inode);
+}
+
+int getInodeIndexByPath(string path) {
+    Ext2Dentry dentry;
+    return readDentry(path, &dentry) ? dentry.inode : 0;
 }
 
 int readInode(int inodeNo, Ext2Inode* inode) {
