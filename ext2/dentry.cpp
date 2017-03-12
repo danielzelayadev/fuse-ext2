@@ -19,7 +19,7 @@ int readDentry(Ext2Inode dirInode, string filename, Ext2Dentry* dentry) {
 
         while (i < blockSize) {
             Ext2Dentry* fileDentry = (Ext2Dentry*)(&block[i]);
-
+            
             if (fileDentry->name == filename) {
                 memcpy(dentry, fileDentry, DENTRY_SIZE);
                 return 1;
@@ -32,6 +32,11 @@ int readDentry(Ext2Inode dirInode, string filename, Ext2Dentry* dentry) {
     }
     
     return 0;
+}
+
+void getPrintableDentryName(Ext2Dentry dentry, char* n) {
+    memcpy(n, dentry.name, dentry.name_len);
+    n[dentry.name_len] = 0;
 }
 
 void printDentry(Ext2Dentry dentry) {
