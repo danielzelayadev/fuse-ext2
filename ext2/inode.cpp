@@ -52,7 +52,7 @@ int readSIBlock(int siBlockNo, int block, char* buff) {
 
     unsigned int blockNo;
 
-    memcpy(&blockNo, &siBlock[block], sizeof(unsigned int));
+    memcpy(&blockNo, &siBlock[block*(sizeof(unsigned int))], sizeof(unsigned int));
 
     return blockNo ? readBlock(blockNo, buff) : 0;
 }
@@ -69,7 +69,7 @@ int readDIBlock(int diBlockNo, int siPointer, int block, char* buff) {
 
     unsigned int siBlockNo;
 
-    memcpy(&siBlockNo, &diBlock[siPointer], sizeof(unsigned int));
+    memcpy(&siBlockNo, &diBlock[siPointer*(sizeof(unsigned int))], sizeof(unsigned int));
 
     return readSIBlock(siBlockNo, block, buff);
 }
@@ -86,7 +86,7 @@ int readTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* bu
 
     unsigned int diBlockNo;
 
-    memcpy(&diBlockNo, &tiBlock[diPointer], sizeof(unsigned int));
+    memcpy(&diBlockNo, &tiBlock[diPointer*(sizeof(unsigned int))], sizeof(unsigned int));
 
     return readDIBlock(diBlockNo, siPointer, block, buff);
 }
@@ -158,8 +158,32 @@ int readInodeBlock(Ext2Inode inode, int block, char* buff) {
         return readDIBlock(di, si, b, buff);
     if (IS_TI)
         return readTIBlock(ti, di, si, b, buff);
-        
+
     return 0;
+}
+
+int readInodeBlock(Ext2Inode inode, void* buff, int pos, int size) {
+    int blockNo = pos / blockSize;
+    int posFirstBlock = pos % blockSize;
+    int rleft = size > inode.i_size ? inode.i_size : size, rcount = 0;
+    char block[blockSize];
+
+    for (int i = 0; (blockNo*blockSize) < inode.i_size && rleft; i++) {
+        if (!readInodeBlock(inode, blockNo, block))
+            return 0;
+
+        int bpos = i ? 0 : posFirstBlock;
+        int bleft = blockSize - bpos;
+        int rsize = rleft < bleft ? rleft : bleft;
+
+        memcpy(&(((char*)buff)[rcount]), &block[bpos], rsize);
+
+        blockNo++;
+        rleft -= rsize;
+        rcount += rsize;
+    }
+
+    return rcount;
 }
 
 void fillInodeStatBuff(int inodeNo, struct stat* statbuf) {
@@ -169,15 +193,16 @@ void fillInodeStatBuff(int inodeNo, struct stat* statbuf) {
 }
 
 void fillInodeStatBuff(Ext2Inode inode, struct stat* statbuf) {
-    statbuf->st_mode   = inode.i_mode;
-    statbuf->st_nlink  = inode.i_links_count;
-    statbuf->st_size   = inode.i_size;
-    statbuf->st_blocks = inode.i_blocks;
-    statbuf->st_uid    = inode.i_uid;
-    statbuf->st_gid    = inode.i_gid;
-    statbuf->st_atime  = inode.i_atime;
-    statbuf->st_mtime  = inode.i_mtime;
-    statbuf->st_ctime  = inode.i_ctime;
+    statbuf->st_mode    = inode.i_mode;
+    statbuf->st_nlink   = inode.i_links_count;
+    statbuf->st_size    = inode.i_size;
+    statbuf->st_blocks  = inode.i_blocks;
+    statbuf->st_uid     = inode.i_uid;
+    statbuf->st_gid     = inode.i_gid;
+    statbuf->st_atime   = inode.i_atime;
+    statbuf->st_mtime   = inode.i_mtime;
+    statbuf->st_ctime   = inode.i_ctime;
+    statbuf->st_blksize = blockSize;
 }
 
 void printInode(Ext2Inode inode) {

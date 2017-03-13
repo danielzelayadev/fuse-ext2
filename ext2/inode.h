@@ -26,6 +26,7 @@ int getInodeByPath(string path, Ext2Inode* inode);
 int getInodeIndexByPath(string path);
 int readInode(int inodeNo, Ext2Inode* inode);
 int readInodeBlock(Ext2Inode inode, int block, char* buff);
+int readInodeBlock(Ext2Inode inode, void* buff, int pos, int size);
 void fillInodeStatBuff(Ext2Inode inode, struct stat* statbuf);
 void fillInodeStatBuff(int inodeNo, struct stat* statbuf);
 void printInode(Ext2Inode inode);
