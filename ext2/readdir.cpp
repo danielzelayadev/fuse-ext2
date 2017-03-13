@@ -33,11 +33,8 @@ int readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, s
             continue;
 
         fillInodeStatBuff(dentry.inode, &statbuf);
-
-        char name[dentry.name_len];
-        getPrintableDentryName(dentry, name);
         
-        if (filler(buf, name, &statbuf, offset))
+        if (filler(buf, getPrintableDentryName(dentry).c_str(), &statbuf, offset))
             return 0;
     }
     

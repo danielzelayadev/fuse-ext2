@@ -8,7 +8,6 @@
 
 int readDentry(string path, Ext2Dentry* dentry) {
     vector<string> filenames;
-    string currDir = "/";
     int currDirInodeNo = ROOT_DIR_INODE;
 
     split(path, '/', filenames);
@@ -17,11 +16,12 @@ int readDentry(string path, Ext2Dentry* dentry) {
         Ext2Inode dirInode;
 
         if (!readInode(currDirInodeNo, &dirInode) || 
-            !readDentry(dirInode, filenames[i], dentry)) 
-            return 0;
+            !readDentry(dirInode, filenames[i], dentry)) {
+                cout << "File not found: " << filenames[i] << endl;
+                return 0;
+            }
 
         currDirInodeNo = dentry->inode;
-        currDir = filenames[i];
     }
 
     return 1;
@@ -31,7 +31,7 @@ int readDentry(Ext2Inode dirInode, string filename, Ext2Dentry* dentry) {
     int offset = 0;
     
     while(readDentry(dirInode, offset, dentry)) {
-        if (dentry->name == filename)
+        if (getPrintableDentryName(*dentry) == filename)
             return 1;
         offset += dentry->rec_len;
     }
@@ -54,19 +54,18 @@ int readDentry(Ext2Inode dirInode, int offset, Ext2Dentry* dentry) {
     return 1;
 }
 
-void getPrintableDentryName(Ext2Dentry dentry, char* n) {
-    memcpy(n, dentry.name, dentry.name_len);
-    n[dentry.name_len] = 0;
+string getPrintableDentryName(Ext2Dentry dentry) {
+    char name[dentry.name_len];
+    memcpy(name, dentry.name, dentry.name_len);
+    name[dentry.name_len] = 0;
+    return string(name);
 }
 
 void printDentry(Ext2Dentry dentry) {
-    char name[dentry.name_len];
-    getPrintableDentryName(dentry, name);
-    
     cout << "\nPrinting Dentry: \n";
     cout << "Inode: " << dentry.inode << endl;
     cout << "Dentry Length: " << dentry.rec_len << endl;
     cout << "Name Length: " << (int)dentry.name_len << endl;
     cout << "Type: " << (int)dentry.type << endl;
-    cout << "Name: " << name << endl << endl;
+    cout << "Name: " << getPrintableDentryName(dentry) << endl << endl;
 }

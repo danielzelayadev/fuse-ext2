@@ -11,7 +11,7 @@ using namespace std;
 int readDentry(string path, Ext2Dentry* dentry);
 int readDentry(Ext2Inode dirInode, string filename, Ext2Dentry* dentry);
 int readDentry(Ext2Inode dirInode, int offset, Ext2Dentry* dentry);
-void getPrintableDentryName(Ext2Dentry dentry, char* n);
+string getPrintableDentryName(Ext2Dentry dentry);
 void printDentry(Ext2Dentry dentry);
 
 #endif
