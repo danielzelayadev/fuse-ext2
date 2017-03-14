@@ -4,6 +4,7 @@
 #include <fuse.h>
 
 void* init(struct fuse_conn_info *conn);
+int statfs(const char* path, struct statvfs* stbuf);
 int getattr(const char *path, struct stat *statbuf);
 int readlink(const char *path, char *link, size_t size);
 int open(const char *path, struct fuse_file_info *fileInfo);

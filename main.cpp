@@ -9,6 +9,7 @@ struct fuse_operations ext2_ops;
 
 void initOps() {
 	ext2_ops.init     = init;
+	ext2_ops.statfs   = statfs;
 	ext2_ops.open     = open;
 	ext2_ops.getattr  = getattr;
 	ext2_ops.read     = read;
