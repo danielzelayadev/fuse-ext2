@@ -1,6 +1,7 @@
 #include "alloc.h"
 #include "bitmap.h"
 #include "super.h"
+#include "inode.h"
 #include "groupdesc.h"
 #include "../device/device.h"
 
@@ -9,6 +10,13 @@
 int getFirstFreeBlock() {
     for (int i = 3; i < blockCount; i++)
         if (bitIsOff(i, BLOCK_BITMAP))
+            return i;
+    return -1;
+}
+
+int getNextFreeInode() {
+    for (int i = 0; i < inodeCount; i++)
+        if (bitIsOff(i, INODE_BITMAP))
             return i;
     return -1;
 }
@@ -24,7 +32,7 @@ int allocBlock() {
     if (turnOnBit(firstFreeBlock, BLOCK_BITMAP)) {
         Ext2SuperBlock sb;
         Ext2GroupDescriptor gd;
-        int blockGroup = BIT_BLOCK_GROUP(firstFreeBlock);
+        int blockGroup = BIT_BLOCK_GROUP(firstFreeBlock, BLOCK_BITMAP);
 
         if (!readSuperBlock(&sb)) {
             printf("allocBlock: Could not read super block.\n");
@@ -52,6 +60,47 @@ int allocBlock() {
         }
 
         return firstFreeBlock;
+    }
+
+    return -1;
+}
+
+int allocInode() {
+    Ext2SuperBlock sb;
+    int firstFreeInode;
+
+    if (!readSuperBlock(&sb)) {
+        printf("allocInode: Couldn't read superblock.\n");
+        return -1;
+    }
+
+    firstFreeInode = sb.s_first_ino;
+
+    if (turnOnBit(firstFreeInode, INODE_BITMAP)) {
+        Ext2GroupDescriptor gd;
+        int blockGroup = BIT_BLOCK_GROUP(firstFreeInode, INODE_BITMAP);
+
+        sb.s_free_inodes_count--;
+        sb.s_first_ino = getNextFreeInode();
+
+        if (!writeSuperBlock(&sb)) {
+            printf("allocInode: Could not update super block.\n");
+            return -1;
+        }
+
+        if (!readGroupDesc(blockGroup, &gd)) {
+            printf("allocInode: Could not read group desc.\n");
+            return -1;
+        }
+
+        gd.bg_free_inodes_count--;
+
+        if (!writeGroupDesc(blockGroup, &gd)) {
+            printf("allocInode: Could not update group desc.\n");
+            return -1;
+        }
+
+        return firstFreeInode;
     }
 
     return -1;
