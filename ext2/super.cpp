@@ -2,6 +2,8 @@
 #include "../device/device.h"
 #include <string.h>
 
+int blockCount;
+
 int readSuperBlock(Ext2SuperBlock* sb) {
     char* buffer = new char[SB_SIZE];
 

@@ -5,6 +5,8 @@
 
 #define SB_SIZE sizeof(Ext2SuperBlock)
 
+extern int blockCount;
+
 int readSuperBlock(Ext2SuperBlock* sb);
 
 #endif
