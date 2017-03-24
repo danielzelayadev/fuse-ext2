@@ -20,7 +20,7 @@ using namespace std;
 #define IS_TI (block >= DI_UL && block < TI_UL)
 
 extern unsigned int inodesPerBlock, inodesPerGroup, itableBlockCount, 
-                    BLOCK_POINTERS_IN_BLOCK;
+                    inodeCount, BLOCK_POINTERS_IN_BLOCK;
 
 int getInodeByPath(string path, Ext2Inode* inode);
 int getInodeIndexByPath(string path);

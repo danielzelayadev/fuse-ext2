@@ -24,5 +24,6 @@ void* init(struct fuse_conn_info *conn) {
     inodesPerBlock = blockSize / INODE_SIZE;
     itableBlockCount = sb.s_inodes_per_group / inodesPerBlock;
     inodesPerGroup = sb.s_inodes_per_group;
+    inodeCount = inodesPerGroup * groupCount;
     BLOCK_POINTERS_IN_BLOCK = blockSize/sizeof(uint32_t);
 }
