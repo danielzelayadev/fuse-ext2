@@ -43,10 +43,6 @@ int getBitmapBlock(int blockGroup, int type) {
            (type == INODE_BITMAP ? gd.bg_inode_bitmap : -1);
 }
 
-int getBitBlockGroup(int bit) {
-    return bit / BITS_IN_BMP;
-}
-
 int loadBitmap(int blockGroup, char* bitmap, int type) {
     return loadBitmap(getBitmapBlock(blockGroup, type), bitmap);
 }
@@ -57,7 +53,7 @@ int loadBitmapOfBit(int bit, char* bmp, int type) {
         return 0;
     }
 
-    return loadBitmap(getBitBlockGroup(bit), bmp, type);
+    return loadBitmap(BIT_BLOCK_GROUP(bit), bmp, type);
 }
 
 int writeBitmap(int blockGroup, char* bitmap, int type) {
@@ -70,7 +66,7 @@ int writeBitmapOfBit(int bit, char* bmp, int type) {
         return 0;
     }
 
-    return writeBitmap(getBitBlockGroup(bit), bmp, type);
+    return writeBitmap(BIT_BLOCK_GROUP(bit), bmp, type);
 }
 
 int turnOnBit(int bit, int type) {
