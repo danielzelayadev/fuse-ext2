@@ -3,7 +3,9 @@ LINKFLAGS = -w -std=c++11 `pkg-config fuse --libs`
 OBJS = obj/main.o obj/args.o obj/device.o obj/ext2.o obj/init.o obj/open.o
 OBJS += obj/read.o obj/readdir.o obj/readlink.o obj/getattr.o obj/inode.o
 OBJS += obj/super.o obj/groupdesc.o obj/blockgroup.o obj/utils.o obj/dentry.o 
-OBJS += obj/statfs.o
+OBJS += obj/statfs.o obj/mkdir.o obj/alloc.o obj/bitmap.o obj/mknod.o obj/write.o
+OBJS += obj/truncate.o obj/ftruncate.o
+TESTOBJS = $(filter-out obj/main.o, $(OBJS)) obj/test.o
 
 all: bin/ext2
 
@@ -13,14 +15,20 @@ clean:
 bin: 
 	mkdir -p bin
 
-bin/ext2: bin $(OBJS)
+bin/ext2: clean bin $(OBJS)
 	g++ -g -o bin/ext2 obj/* $(LINKFLAGS)
+
+test: clean bin $(TESTOBJS)
+	g++ -g -o bin/test obj/* -w -std=c++11
 
 obj:
 	mkdir -p obj
 
 obj/main.o: obj main.cpp
 	g++ $(CFLAGS) -c main.cpp -o $@
+
+obj/test.o: obj test.cpp
+	g++ $(CFLAGS) -c test.cpp -o $@
 
 obj/args.o: obj args.cpp
 	g++ $(CFLAGS) -c args.cpp -o $@
@@ -30,6 +38,12 @@ obj/device.o: obj ./device/device.cpp
 
 obj/ext2.o: obj ./ext2/ext2.cpp
 	g++ $(CFLAGS) -c ./ext2/ext2.cpp -o $@
+
+obj/alloc.o: obj ./ext2/alloc.cpp
+	g++ $(CFLAGS) -c ./ext2/alloc.cpp -o $@
+
+obj/bitmap.o: obj ./ext2/bitmap.cpp
+	g++ $(CFLAGS) -c ./ext2/bitmap.cpp -o $@
 
 obj/super.o: obj ./ext2/super.cpp
 	g++ $(CFLAGS) -c ./ext2/super.cpp -o $@
@@ -87,6 +101,9 @@ obj/chown.o: obj ./ext2/chown.cpp
 
 obj/truncate.o: obj ./ext2/truncate.cpp
 	g++ $(CFLAGS) -c ./ext2/truncate.cpp -o $@
+
+obj/ftruncate.o: obj ./ext2/ftruncate.cpp
+	g++ $(CFLAGS) -c ./ext2/ftruncate.cpp -o $@
 
 obj/utime.o: obj ./ext2/utime.cpp
 	g++ $(CFLAGS) -c ./ext2/utime.cpp -o $@
