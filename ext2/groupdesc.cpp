@@ -9,6 +9,11 @@ int readGroupDesc(int num, Ext2GroupDescriptor* gd) {
     return read(pos, (void*)gd, GD_SIZE);
 }
 
+int writeGroupDesc(int num, Ext2GroupDescriptor* gd) {
+    int pos = (GDT_BASE) + (GD_SIZE * num);
+    return write(pos, (void*)gd, GD_SIZE);
+}
+
 void printGroupDesc(Ext2GroupDescriptor gd) {
     cout << "Block Bitmap Block: " << gd.bg_block_bitmap << endl;
     cout << "Inode Bitmap Block: " << gd.bg_inode_bitmap << endl;

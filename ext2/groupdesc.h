@@ -8,6 +8,7 @@
 #define GDT_BLOCK 2
 
 int readGroupDesc(int num, Ext2GroupDescriptor* gd);
+int writeGroupDesc(int num, Ext2GroupDescriptor* gd);
 void printGroupDesc(Ext2GroupDescriptor gd);
 
 #endif
