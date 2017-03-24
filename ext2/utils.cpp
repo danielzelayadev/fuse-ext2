@@ -19,3 +19,23 @@ void split(const string& s, char c, vector<string>& v) {
 bool indexOutOfBounds(int index, int size) {
       return index < 0 || index >= size;
 }
+
+void turnOnBit(char* b, int pos) {
+    *b |= (1 << pos);
+}
+
+void turnOffBit(char* b, int pos) {
+    *b &= ~(1 << pos);
+}
+
+void toggleBit(char* b, int pos) {
+    *b ^= (1 << pos);
+}
+
+bool bitIsOn(char b, int pos) {
+    return (b & (1 << pos));
+}
+
+bool bitIsOff(char b, int pos) {
+    return !(b & (1 << pos));
+}

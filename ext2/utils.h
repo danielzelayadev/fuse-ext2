@@ -8,5 +8,10 @@ using namespace std;
 
 void split(const string& s, char c, vector<string>& v);
 bool indexOutOfBounds(int index, int size);
+void turnOnBit(char* b, int pos);
+void turnOffBit(char* b, int pos);
+void toggleBit(char* b, int pos);
+bool bitIsOn(char b, int pos);
+bool bitIsOff(char b, int pos);
 
 #endif
