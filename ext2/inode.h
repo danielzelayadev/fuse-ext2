@@ -19,7 +19,7 @@ using namespace std;
 #define IS_DI (block >= SI_UL && block < DI_UL)
 #define IS_TI (block >= DI_UL && block < TI_UL)
 
-extern unsigned int inodesPerBlock, itableBlockCount, 
+extern unsigned int inodesPerBlock, inodesPerGroup, itableBlockCount, 
                     BLOCK_POINTERS_IN_BLOCK;
 
 int getInodeByPath(string path, Ext2Inode* inode);

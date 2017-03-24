@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 
 Ext2SuperBlock* sb = 0;
-unsigned int inodesPerBlock, itableBlockCount, 
+unsigned int inodesPerBlock, inodesPerGroup, itableBlockCount, 
              BLOCK_POINTERS_IN_BLOCK;
 
 int loadSb() {

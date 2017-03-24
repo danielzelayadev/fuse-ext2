@@ -15,11 +15,14 @@ void* init(struct fuse_conn_info *conn) {
     if (!readSuperBlock(&sb))
         return 0;
 
+    printSuperBlock(sb);
+
     blockSize = 1024 << sb.s_log_block_size;
     blockCount = sb.s_blocks_count;
     groupCount = 1 + (blockCount - 1) / sb.s_blocks_per_group;
     descriptorListSize = groupCount * GD_SIZE;
     inodesPerBlock = blockSize / INODE_SIZE;
     itableBlockCount = sb.s_inodes_per_group / inodesPerBlock;
+    inodesPerGroup = sb.s_inodes_per_group;
     BLOCK_POINTERS_IN_BLOCK = blockSize/sizeof(uint32_t);
 }
