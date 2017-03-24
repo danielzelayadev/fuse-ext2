@@ -31,6 +31,11 @@ int read(int pos, void* buffer, int size) {
     return 1;
 }
 
+int write(int pos, void* buffer, int size) {
+    fseek(f, pos, SEEK_SET);
+    return fwrite(buffer, 1, size, f) == size;
+}
+
 int writeBlock(int blockNo, char* buffer) {
     fseek(f, blockNo*blockSize, SEEK_SET);
     return (fwrite(buffer, 1, blockSize, f) == blockSize);
