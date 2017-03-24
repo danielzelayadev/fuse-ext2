@@ -8,6 +8,7 @@
 #include "ext2/blockgroup.h"
 #include "ext2/alloc.h"
 #include "ext2/bitmap.h"
+#include "ext2/utils.h"
 
 void init() {
     Ext2SuperBlock sb;
@@ -21,11 +22,12 @@ void init() {
     descriptorListSize = groupCount * GD_SIZE;
     inodesPerBlock = blockSize / INODE_SIZE;
     itableBlockCount = sb.s_inodes_per_group / inodesPerBlock;
+    inodesPerGroup = sb.s_inodes_per_group;
     BLOCK_POINTERS_IN_BLOCK = blockSize/sizeof(uint32_t);
 }
 
-void printBitmapBlock(int blockNo, int type) {
-    int start = blockNo * BITS_IN_BMP,
+void printBitmapBlock(int groupNo, int type) {
+    int start = groupNo * BITS_IN_BMP,
         end   = start + BITS_IN_BMP;
     int lowerBound, higherBound;
 
@@ -44,18 +46,67 @@ void printBitmapBlock(int blockNo, int type) {
     printf("\n");
 }
 
+void testBitmap(int groupNo, int type) {
+    Ext2SuperBlock sb;
+    readSuperBlock(&sb);
+    Ext2GroupDescriptor gd;
+    readGroupDesc(groupNo, &gd);
+
+    int RBC = 0, FBC = 0;
+
+    int start = BITS_IN_BMP*groupNo;
+    int end = start + (type == BLOCK_BITMAP ? BITS_IN_BMP : inodesPerGroup);
+
+    for (int i = start; i < end; i++)
+        if (bitIsOff(i, type))
+            FBC++;
+        else
+            RBC++;
+
+    int sum = RBC + FBC;
+
+    const char* result = 
+        sum == (type == BLOCK_BITMAP ? BITS_IN_BMP : inodesPerGroup) &&
+        FBC == (type == BLOCK_BITMAP ? gd.bg_free_blocks_count : gd.bg_free_inodes_count) ? 
+        "SUCCESS" : "FAILED";
+
+    printf("%s Group %d Bitmap Test Result: %s\n", (type == BLOCK_BITMAP ? "Block" : "Inode"), groupNo, result);
+}
+
+// Deberia de assert el groupdesc
+void testBlockAllocation() {
+    Ext2SuperBlock oldSb;
+    readSuperBlock(&oldSb);
+
+    int allocatedBlock = allocBlock();
+
+    Ext2SuperBlock newSb;
+    readSuperBlock(&newSb);
+
+    char* result = "FAILED";
+
+    if (allocatedBlock != -1 &&
+        oldSb.s_r_blocks_count == newSb.s_r_blocks_count - 1 &&
+        oldSb.s_free_blocks_count == newSb.s_free_blocks_count + 1)
+        result = "SUCCESS";
+
+    printf("Block Allocation Test Result: %s\n", result);
+}
+
 int main(int argc, char **argv) {
-	if (!openDevice("ext2device")) {
+	if (!openDevice("dev")) {
 		printf("Unable to open device.\n");
 		return 1;
 	}
 
     init();
 
-    // for (int i = 0; i < 300; i++)
-    //     printf("Block Allocated: %d.\n\n", allocBlock());
-    // printBitmapBlock(0, BLOCK_BITMAP); 
-    printBitmapBlock(0, BLOCK_BITMAP);    
+    for (int i = 0; i < groupCount; i++)
+        testBitmap(i, BLOCK_BITMAP);
+    for (int i = 0; i < groupCount; i++)
+        testBitmap(i, INODE_BITMAP);
+    for (int i = 0; i < 20; i++)
+        testBlockAllocation();
 
     closeDevice();
 
