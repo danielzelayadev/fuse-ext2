@@ -8,5 +8,7 @@
 extern int blockCount;
 
 int readSuperBlock(Ext2SuperBlock* sb);
+int writeSuperBlock(Ext2SuperBlock* sb);
+void printSuperBlock(Ext2SuperBlock sb);
 
 #endif
