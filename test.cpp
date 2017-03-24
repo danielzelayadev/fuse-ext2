@@ -23,6 +23,7 @@ void init() {
     inodesPerBlock = blockSize / INODE_SIZE;
     itableBlockCount = sb.s_inodes_per_group / inodesPerBlock;
     inodesPerGroup = sb.s_inodes_per_group;
+    inodeCount = inodesPerGroup * groupCount;
     BLOCK_POINTERS_IN_BLOCK = blockSize/sizeof(uint32_t);
 }
 
@@ -93,6 +94,25 @@ void testBlockAllocation() {
     printf("Block Allocation Test Result: %s\n", result);
 }
 
+// Deberia de assert el groupdesc
+void testInodeAllocation() {
+    Ext2SuperBlock oldSb;
+    readSuperBlock(&oldSb);
+
+    int allocatedInode = allocInode();
+
+    Ext2SuperBlock newSb;
+    readSuperBlock(&newSb);
+
+    char* result = "FAILED";
+
+    if (allocatedInode != -1 &&
+        oldSb.s_free_inodes_count == newSb.s_free_inodes_count + 1)
+        result = "SUCCESS";
+
+    printf("Inode Allocation Test Result: %s\n", result);
+}
+
 int main(int argc, char **argv) {
 	if (!openDevice("dev")) {
 		printf("Unable to open device.\n");
@@ -101,12 +121,21 @@ int main(int argc, char **argv) {
 
     init();
 
+    printf("\n/////// BLOCK BITMAP TESTS ///////\n\n");
     for (int i = 0; i < groupCount; i++)
         testBitmap(i, BLOCK_BITMAP);
+
+    printf("\n/////// INODE BITMAP TESTS ///////\n\n");
     for (int i = 0; i < groupCount; i++)
         testBitmap(i, INODE_BITMAP);
+
+    printf("\n/////// BLOCK ALLOCATION TESTS ///////\n\n");
     for (int i = 0; i < 20; i++)
         testBlockAllocation();
+
+    printf("\n/////// INODE ALLOCATION TESTS ///////\n\n");
+    for (int i = 0; i < 20; i++)
+        testInodeAllocation();
 
     closeDevice();
 
