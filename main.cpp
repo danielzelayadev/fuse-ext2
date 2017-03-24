@@ -8,13 +8,18 @@
 struct fuse_operations ext2_ops;
 
 void initOps() {
-	ext2_ops.init     = init;
-	ext2_ops.statfs   = statfs;
-	ext2_ops.open     = open;
-	ext2_ops.getattr  = getattr;
-	ext2_ops.read     = read;
-	ext2_ops.readdir  = readdir;
-	ext2_ops.readlink = readlink;
+	ext2_ops.init         = init;
+	ext2_ops.statfs       = statfs;
+	ext2_ops.open         = open;
+	ext2_ops.getattr      = getattr;
+	ext2_ops.read         = read;
+	ext2_ops.readdir      = readdir;
+	ext2_ops.readlink     = readlink;
+	ext2_ops.mkdir        = mkdir;
+	ext2_ops.mknod        = mknod;
+	ext2_ops.write        = write;
+	ext2_ops.truncate     = truncate;
+	ext2_ops.ftruncate    = ftruncate;
 }
 
 int main(int argc, char **argv) {
