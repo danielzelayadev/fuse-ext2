@@ -1,4 +1,5 @@
 #include "bitmap.h"
+#include "inode.h"
 #include "groupdesc.h"
 #include "utils.h"
 #include "../device/device.h"
@@ -53,7 +54,7 @@ int loadBitmapOfBit(int bit, char* bmp, int type) {
         return 0;
     }
 
-    return loadBitmap(BIT_BLOCK_GROUP(bit), bmp, type);
+    return loadBitmap(BIT_BLOCK_GROUP(bit, type), bmp, type);
 }
 
 int writeBitmap(int blockGroup, char* bitmap, int type) {
@@ -66,7 +67,7 @@ int writeBitmapOfBit(int bit, char* bmp, int type) {
         return 0;
     }
 
-    return writeBitmap(BIT_BLOCK_GROUP(bit), bmp, type);
+    return writeBitmap(BIT_BLOCK_GROUP(bit, type), bmp, type);
 }
 
 int turnOnBit(int bit, int type) {
@@ -77,7 +78,7 @@ int turnOnBit(int bit, int type) {
         return 0;
     }
 
-    turnOnBit(&bmp[BYTE_POS(bit)], BIT_POS(bit));
+    turnOnBit(&bmp[BYTE_POS(bit, type)], BIT_POS(bit));
 
     return writeBitmapOfBit(bit, bmp, type);
 }
@@ -90,7 +91,7 @@ int turnOffBit(int bit, int type) {
         return 0;
     }
 
-    turnOffBit(&bmp[BYTE_POS(bit)], BIT_POS(bit));
+    turnOffBit(&bmp[BYTE_POS(bit, type)], BIT_POS(bit));
 
     return writeBitmapOfBit(bit, bmp, type);
 }
@@ -103,7 +104,7 @@ int bitIsOn(int bit, int type) {
         return 0;
     }
 
-    return bitIsOn(bmp[BYTE_POS(bit)], BIT_POS(bit));
+    return bitIsOn(bmp[BYTE_POS(bit, type)], BIT_POS(bit));
 }
 
 int bitIsOff(int bit, int type) {
@@ -114,5 +115,5 @@ int bitIsOff(int bit, int type) {
         return 0;
     }
 
-    return bitIsOff(bmp[BYTE_POS(bit)], BIT_POS(bit));
+    return bitIsOff(bmp[BYTE_POS(bit, type)], BIT_POS(bit));
 }
