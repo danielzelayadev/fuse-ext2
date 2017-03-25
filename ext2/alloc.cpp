@@ -66,22 +66,24 @@ int allocBlock() {
 }
 
 int allocInode() {
-    Ext2SuperBlock sb;
-    int firstFreeInode;
+    int firstFreeInode = getNextFreeInode();
 
-    if (!readSuperBlock(&sb)) {
-        printf("allocInode: Couldn't read superblock.\n");
+    if (firstFreeInode == -1) {
+        printf("allocInode: No more inodes.\n");
         return -1;
     }
 
-    firstFreeInode = sb.s_first_ino;
-
     if (turnOnBit(firstFreeInode, INODE_BITMAP)) {
+        Ext2SuperBlock sb;
         Ext2GroupDescriptor gd;
         int blockGroup = BIT_BLOCK_GROUP(firstFreeInode, INODE_BITMAP);
 
+        if (!readSuperBlock(&sb)) {
+            printf("allocInode: Could not read super block.\n");
+            return -1;
+        }
+
         sb.s_free_inodes_count--;
-        sb.s_first_ino = getNextFreeInode();
 
         if (!writeSuperBlock(&sb)) {
             printf("allocInode: Could not update super block.\n");
@@ -100,7 +102,7 @@ int allocInode() {
             return -1;
         }
 
-        return firstFreeInode;
+        return firstFreeInode + 1;
     }
 
     return -1;
