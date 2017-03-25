@@ -3,6 +3,7 @@
 #include "groupdesc.h"
 #include "blockgroup.h"
 #include "dentry.h"
+#include "alloc.h"
 #include "../device/device.h"
 #include "utils.h"
 #include <string.h>
@@ -40,7 +41,7 @@ void breakDownBlockNo(int block, int* ti, int* di, int* si, int* blk) {
     }
 }
 
-int readSIBlock(int siBlockNo, int block, char* buff) {
+int accessSIBlock(int siBlockNo, int block, char* buff, int (*op)(int, char*)) {
     if (!siBlockNo) return 0;
 
     char siBlock[blockSize];
@@ -54,10 +55,10 @@ int readSIBlock(int siBlockNo, int block, char* buff) {
 
     memcpy(&blockNo, &siBlock[block*(sizeof(unsigned int))], sizeof(unsigned int));
 
-    return blockNo ? readBlock(blockNo, buff) : 0;
+    return blockNo ? op(blockNo, buff) : 0;
 }
 
-int readDIBlock(int diBlockNo, int siPointer, int block, char* buff) {
+int accessDIBlock(int diBlockNo, int siPointer, int block, char* buff, int (*op)(int, char*)) {
     if (!diBlockNo) return 0;
 
     char diBlock[blockSize];
@@ -71,10 +72,10 @@ int readDIBlock(int diBlockNo, int siPointer, int block, char* buff) {
 
     memcpy(&siBlockNo, &diBlock[siPointer*(sizeof(unsigned int))], sizeof(unsigned int));
 
-    return readSIBlock(siBlockNo, block, buff);
+    return accessSIBlock(siBlockNo, block, buff, op);
 }
 
-int readTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* buff) {
+int accessTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* buff, int (*op)(int, char*)) {
     if (!tiBlockNo) return 0;
 
     char tiBlock[blockSize];
@@ -88,7 +89,31 @@ int readTIBlock(int tiBlockNo, int diPointer, int siPointer, int block, char* bu
 
     memcpy(&diBlockNo, &tiBlock[diPointer*(sizeof(unsigned int))], sizeof(unsigned int));
 
-    return readDIBlock(diBlockNo, siPointer, block, buff);
+    return accessDIBlock(diBlockNo, siPointer, block, buff, op);
+}
+
+int accessInodeBlock(Ext2Inode inode, int block, char* buff, int (*op)(int, char*)) {
+    if (indexOutOfBounds(block, inode.i_blocks))
+        return 0;
+
+    if (block < EXT2_NDIR_BLOCKS && inode.i_block[block])
+        return op(inode.i_block[block], buff);
+
+    int ti = inode.i_block[EXT2_TIND_BLOCK], 
+        di = inode.i_block[EXT2_DIND_BLOCK], 
+        si = inode.i_block[EXT2_IND_BLOCK], 
+        b  = block;
+
+    breakDownBlockNo(block, &ti, &di, &si, &b);
+
+    if (IS_SI)
+        return accessSIBlock(si, b, buff, op);
+    if (IS_DI)
+        return accessDIBlock(di, si, b, buff, op);
+    if (IS_TI)
+        return accessTIBlock(ti, di, si, b, buff, op);
+
+    return 0;
 }
 
 int getBlockGroupOfInode(int inodeNo) {
@@ -105,6 +130,25 @@ int calcInodePositionInDevice(Ext2GroupDescriptor gd, int inodeIndexInGroup) {
     return (gd.bg_inode_table * blockSize) + (inodeIndexInGroup * INODE_SIZE);
 }
 
+int getInodePosition(int inodeNo) {
+    if (!loadSb()) return -1;
+
+    Ext2GroupDescriptor gd;
+
+    int blockGroup = getBlockGroupOfInode(inodeNo);
+
+    if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
+        return -1;
+
+    int indxInGroup = getInodeIndexInGroup(inodeNo);
+
+    int pos = calcInodePositionInDevice(gd, indxInGroup);
+
+    sb = 0;
+
+    return pos;
+}
+
 int getInodeByPath(string path, Ext2Inode* inode) {
     if (path == "/")
         return readInode(ROOT_DIR_INODE, inode);
@@ -119,47 +163,134 @@ int getInodeIndexByPath(string path) {
     return readDentry(path, &dentry) ? dentry.inode : 0;
 }
 
-int readInode(int inodeNo, Ext2Inode* inode) {
-    if (!loadSb()) return 0;
-
-    Ext2GroupDescriptor gd;
-
-    int blockGroup = getBlockGroupOfInode(inodeNo);
-
-    if (blockGroup < 0 || !readGroupDesc(blockGroup, &gd))
-        return 0;
-
-    int indxInGroup = getInodeIndexInGroup(inodeNo);
-
-    int pos = calcInodePositionInDevice(gd, indxInGroup);
-
-    sb = 0;
-
-    return read(pos, (void*)inode, INODE_SIZE);
+void addSIBlockPointer(int siBlockNo, int b, int pointer) {
+    if (!siBlockNo) return;
+    write((blockSize*siBlockNo) + (sizeof(uint32_t) * b), &pointer, sizeof(uint32_t));
 }
 
-int readInodeBlock(Ext2Inode inode, int block, char* buff) {
-    if (indexOutOfBounds(block, inode.i_blocks))
-        return 0;
+void addDIBlockPointer(int diBlockNo, int si, int b, int pointer) {
+    if (!diBlockNo) return;
 
-    if (block < EXT2_NDIR_BLOCKS && inode.i_block[block])
-        return readBlock(inode.i_block[block], buff);
+    int siBlockNo;
+    
+    if (!b) {
+        siBlockNo = allocBlock();
+        write((diBlockNo * blockSize) + (sizeof(uint32_t) * si), &siBlockNo, sizeof(uint32_t));
+    } else
+        read((diBlockNo * blockSize) + (sizeof(uint32_t) * si), &siBlockNo, sizeof(uint32_t));
 
-    int ti = inode.i_block[EXT2_TIND_BLOCK], 
-        di = inode.i_block[EXT2_DIND_BLOCK], 
-        si = inode.i_block[EXT2_IND_BLOCK], 
+    addSIBlockPointer(siBlockNo, b, pointer);
+}
+
+void addTIBlockPointer(int tiBlockNo, int di, int si, int b, int pointer) {
+    if (!tiBlockNo) return;
+
+    int diBlockNo;
+    
+    if (!si && !b) {
+        diBlockNo = allocBlock();
+        write((tiBlockNo * blockSize) + (sizeof(uint32_t) * di), &diBlockNo, sizeof(uint32_t));
+    } else
+        read((tiBlockNo * blockSize) + (sizeof(uint32_t) * di), &diBlockNo, sizeof(uint32_t));
+
+    addDIBlockPointer(diBlockNo, si, b, pointer);
+}
+
+void addInodeBlockPointer(Ext2Inode* inode, int blockPointer) {
+    int block = I_BLOCKS((*inode), blockSize);
+
+    if (block < EXT2_NDIR_BLOCKS) {
+        inode->i_block[block] = blockPointer;
+        return;
+    }
+    
+    int ti = inode->i_block[EXT2_TIND_BLOCK], 
+        di = inode->i_block[EXT2_DIND_BLOCK], 
+        si = inode->i_block[EXT2_IND_BLOCK], 
         b  = block;
 
     breakDownBlockNo(block, &ti, &di, &si, &b);
 
-    if (IS_SI)
-        return readSIBlock(si, b, buff);
-    if (IS_DI)
-        return readDIBlock(di, si, b, buff);
-    if (IS_TI)
-        return readTIBlock(ti, di, si, b, buff);
+    if (IS_SI) {
+        if (!b)
+            inode->i_block[EXT2_IND_BLOCK] = allocBlock();
+        addSIBlockPointer(si, b, blockPointer);
+    }
+    else if (IS_DI) {
+        if (!si && !b)
+            inode->i_block[EXT2_DIND_BLOCK] = allocBlock();
+        addDIBlockPointer(di, si, b, blockPointer);
+    }
+    else if (IS_TI) {
+        if (!di && !si && !b)
+            inode->i_block[EXT2_TIND_BLOCK] = allocBlock();
+        addTIBlockPointer(ti, di, si, b, blockPointer);
+    }
+}
 
-    return 0;
+int allocInodeBlock(int inodeNo, Ext2Inode* inode) {
+    int allocatedBlock = allocBlock();
+
+    if (allocatedBlock != -1) {
+        addInodeBlockPointer(inode, allocatedBlock);
+        inode->i_size += blockSize;
+        inode->i_blocks = inode->i_size / 512;
+        return writeInode(inodeNo, *inode) ? allocatedBlock : -1;
+    } else
+        printf("allocInodeBlock: Could not allocate block for inode.\n");
+
+    return -1;
+}
+
+int writeInode(int inodeNo, Ext2Inode inode) {
+    return write(getInodePosition(inodeNo), (void*)&inode, INODE_SIZE);
+}
+
+int writeInodeBlock(Ext2Inode inode, int block, char* buff) {
+    return accessInodeBlock(inode, block, buff, writeBlock);
+}
+
+int writeInodeBlock(int inodeNo, Ext2Inode inode, void* buff, int pos, int size) {
+    if ((pos + size) > inode.i_size) {
+        int blocksNeeded = (((pos + size) - inode.i_size) / blockSize) + 1;
+
+        for (int i = 0; i < blocksNeeded; i++)
+            if (allocInodeBlock(inodeNo, &inode) == -1)
+                return 0;
+    }
+
+    int blockNo = pos / blockSize;
+    int posFirstBlock = pos % blockSize;
+    int wleft = size, wcount = 0;
+    char block[blockSize];
+
+    for (int i = 0; (blockNo*blockSize) < inode.i_size && wleft > 0; i++) {
+        if (!readInodeBlock(inode, blockNo, block))
+            return 0;
+
+        int bpos = i ? 0 : posFirstBlock;
+        int bleft = blockSize - bpos;
+        int wsize = wleft < bleft ? wleft : bleft;
+
+        memcpy(&block[bpos], &(((char*)buff)[wcount]), wsize);
+
+        if (!writeInodeBlock(inode, blockNo, block))
+            return 0;
+
+        blockNo++;
+        wleft -= wsize;
+        wcount += wsize;
+    }
+
+    return wcount;
+}
+
+int readInode(int inodeNo, Ext2Inode* inode) {
+    return read(getInodePosition(inodeNo), (void*)inode, INODE_SIZE);
+}
+
+int readInodeBlock(Ext2Inode inode, int block, char* buff) {
+    return accessInodeBlock(inode, block, buff, readBlock);
 }
 
 int readInodeBlock(Ext2Inode inode, void* buff, int pos, int size) {
