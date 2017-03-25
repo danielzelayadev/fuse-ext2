@@ -13,5 +13,9 @@ void turnOffBit(char* b, int pos);
 void toggleBit(char* b, int pos);
 bool bitIsOn(char b, int pos);
 bool bitIsOff(char b, int pos);
+const char* decToOctalStr(int num);
+int roundUp(int num, int multiple);
+uint16_t _getuid();
+uint16_t _getgid();
 
 #endif

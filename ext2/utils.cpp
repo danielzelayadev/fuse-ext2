@@ -1,5 +1,8 @@
 #include "utils.h"
 #include <iostream>
+#include <string>
+#include <string.h>
+#include <unistd.h>
 
 void split(const string& s, char c, vector<string>& v) {
    string::size_type i = 0;
@@ -38,4 +41,36 @@ bool bitIsOn(char b, int pos) {
 
 bool bitIsOff(char b, int pos) {
     return !(b & (1 << pos));
+}
+
+const char* decToOctalStr(int num) {
+    string str("0");
+
+    while (num) {
+        const char* digit = new char[2]{ (num % 8) + '0', 0 };
+        str.insert(1, digit);
+        num = num / 8;
+    }
+
+    return str.c_str();
+}
+
+int roundUp(int num, int multiple) {  
+    if(!multiple)  
+        return num; 
+
+    int remainder = num % multiple;
+     
+    if (!remainder)
+        return num;
+
+    return num + multiple - remainder; 
+}
+
+uint16_t _getuid() {
+    return getuid();
+}
+
+uint16_t _getgid() {
+    return getgid();
 }
